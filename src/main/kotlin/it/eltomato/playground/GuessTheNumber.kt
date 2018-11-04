@@ -11,23 +11,20 @@ fun main(vararg args: String) {
     val upperLimit = 10
     val numberToGuess = Random().nextInt(upperLimit)
 
-    composeProgram(writeIntroduction(upperLimit), guessNumber(numberToGuess)).unsafeRunSync()
-}
-
-fun composeProgram(introduction: IO<Unit>, guessNumber: IO<GuessResult>): IO<GuessResult> {
-    return introduction.flatMap { keepAsking(guessNumber) }
+    writeIntroduction(upperLimit)
+        .flatMap { keepAsking(guessNumber(numberToGuess)) }
+        .unsafeRunSync()
 }
 
 fun keepAsking(guessNumber: IO<GuessResult>): IO<GuessResult> {
     return guessNumber.attempt().flatMap {
         it.fold(
             { writeException(it).flatMap { keepAsking(guessNumber) } },
-            {
-                when (it) {
+            { guessResult ->
+                when (guessResult) {
                     is GuessIncorrect -> keepAsking(guessNumber)
                     else -> {
-                        println("You nailed it!")
-                        IO.just(it)
+                        writeNailed().map { guessResult }
                     }
                 }
             })
@@ -36,6 +33,10 @@ fun keepAsking(guessNumber: IO<GuessResult>): IO<GuessResult> {
 
 fun writeException(it: Throwable): IO<Unit> = IO {
     println("Woops...${it::class.java.name} ${it.message}")
+}
+
+fun writeNailed(): IO<Unit> = IO {
+    println("You nailed it!")
 }
 
 fun guessNumber(numberToGuess: Int): IO<GuessResult> =
