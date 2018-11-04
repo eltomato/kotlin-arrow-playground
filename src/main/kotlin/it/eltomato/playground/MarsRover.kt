@@ -1,6 +1,5 @@
 package it.eltomato.playground
 
-import arrow.core.Either
 import arrow.core.Failure
 import arrow.core.Success
 import arrow.core.Try
@@ -17,10 +16,10 @@ fun main(args: Array<String>) {
         .map { it.rover }
         .attempt().unsafeRunSync()
 
-    when (resultedRover) {
-        is Either.Right -> print("The rover ended up in ${resultedRover.b.position} and is facing ${resultedRover.b.direction}")
-        is Either.Left -> println("Okay, Houston, we've had a problem here: ${resultedRover.a.message}")
-    }
+    resultedRover.fold(
+        { println("Okay, Houston, we've had a problem here: ${it.message}") },
+        { print("The rover ended up in ${it.position} and is facing ${it.direction}") }
+    )
 }
 
 sealed class Command {
