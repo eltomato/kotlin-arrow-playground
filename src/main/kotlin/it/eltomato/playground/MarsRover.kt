@@ -13,9 +13,9 @@ fun main(args: Array<String>) {
     val inititialPlanet = Planet(Dimension(3, 3), Rover(Position(0, 0), North), setOf(Obstacle(Position(0, 2))))
 
     val resultedRover = readCommands()
-            .flatMap { commands -> handleCommands(commands, inititialPlanet).toIO() }
-            .map { it.rover }
-            .attempt().unsafeRunSync()
+        .flatMap { commands -> handleCommands(commands, inititialPlanet).toIO() }
+        .map { it.rover }
+        .attempt().unsafeRunSync()
 
     when (resultedRover) {
         is Either.Right -> print("The rover ended up in ${resultedRover.b.position} and is facing ${resultedRover.b.direction}")
@@ -81,17 +81,8 @@ data class Planet(val dimension: Dimension, val rover: Rover, val obstacles: Set
 
 class ObstacleFoundException(rover: Rover, command: Command.MoveCommand) : Exception("Obstacle found for $rover trying to execute $command")
 
-fun <A> Try<A>.toIO(): IO<A> {
-    val toEither = this.toEither()
-    return when (toEither) {
-        is Either.Left -> IO.raiseError(toEither.a)
-        is Either.Right -> IO.just(toEither.b)
-    }
-}
-
-
 private fun handleCommands(commands: List<Command>, inititialPlanet: Planet): Try<Planet> =
-        commands.fold(Try.just(inititialPlanet), ::handleCommand)
+    commands.fold(Try.just(inititialPlanet), ::handleCommand)
 
 private fun handleCommand(planet: Try<Planet>, command: Command): Try<Planet> {
     return planet.flatMap { planet ->
@@ -111,12 +102,12 @@ fun turn(command: Command.TurnCommand, rover: Rover): Rover {
 }
 
 fun left(direction: Direction): Direction =
-        when (direction) {
-            North -> West
-            West -> South
-            South -> East
-            East -> North
-        }
+    when (direction) {
+        North -> West
+        West -> South
+        South -> East
+        East -> North
+    }
 
 fun right(direction: Direction): Direction = left(left(left(direction)))
 
