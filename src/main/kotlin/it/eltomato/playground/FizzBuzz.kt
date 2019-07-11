@@ -9,30 +9,39 @@ import arrow.instances.option.semigroup.semigroup
 import arrow.instances.semigroup
 import java.util.stream.IntStream.range
 
-
 typealias Rule = (Int) -> Option<String>
+typealias RuleFor = (String) -> Rule
 
 fun main() {
 
-    fun moduleRule(n: Int, s: String): Rule = {
-        if (it % n == 0) Some(s) else None
+    fun divisibleBy(n: Int): RuleFor = { s ->
+        {
+            if (it % n == 0) Some(s) else None
+        }
     }
 
-    fun containsRule(n: Int, s: String): Rule = {
-        if (it.toString().contains(n.toString())) Some(s) else None
+    fun contains(str: String): RuleFor = { s ->
+        {
+            if (it.toString().contains(str)) Some(s) else None
+        }
     }
 
-    fun or(r1: Rule, r2: Rule): Rule {
-        return {
-            Option.monoidK().run {
-                r1(it).combineK(r2(it))
+    infix fun RuleFor.or(r: RuleFor): RuleFor {
+        val ruleFor = this
+        return { s ->
+            {
+                Option.monoidK().run {
+                    ruleFor(s)(it).combineK(r(s)(it))
+                }
             }
         }
     }
 
-    val fizz = or(moduleRule(3, "Fizz"), containsRule(3, "Fizz"))
+    infix fun RuleFor.then(s: String): Rule = this(s)
 
-    val buzz = or(moduleRule(5, "Buzz"), containsRule(5, "Buzz"))
+    val fizz = divisibleBy(3) or contains("3") then "Fizz"
+
+    val buzz = divisibleBy(5) or contains("5") then "Buzz"
 
     val fizzbuzz: Rule = {
         Option.semigroup(String.semigroup()).run {
@@ -40,8 +49,8 @@ fun main() {
         }
     }
 
-    range(1, 36).mapToObj {
-        fizzbuzz(it).getOrElse { it.toString() }
-    }.forEach { println(it) }
-}
+    range(1, 100)
+            .mapToObj { fizzbuzz(it).getOrElse { it.toString() } }
+            .forEach { println(it) }
 
+}
